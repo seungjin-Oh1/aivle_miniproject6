@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aivle-mini6-backend
+  labels:
+    app: aivle-mini6-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aivle-mini6-backend
+  template:
+    metadata:
+      labels:
+        app: aivle-mini6-backend
+    spec:
+      containers:
+        - name: backend
+          image: 416225317325.dkr.ecr.us-east-1.amazonaws.com/aivle-mini6-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AWS_S3_BUCKET
+              value: "aivle-mini6-book-covers-01-01"
+            - name: AWS_REGION
+              value: "us-east-1"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
