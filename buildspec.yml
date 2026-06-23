@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+  pre_build:
+    commands:
+      - echo "Move to backend directory"
+      - cd backend
+  build:
+    commands:
+      - echo "Build started on `date`"
+      - chmod +x gradlew
+      - ./gradlew clean build -x test
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+
+artifacts:
+  files:
+    - backend/build/libs/*.jar
+    - backend/src/main/resources/application.yaml
