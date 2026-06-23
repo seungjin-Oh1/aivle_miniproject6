@@ -1,23 +1,32 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    AWS_ACCOUNT_ID: "416225317325"
+    IMAGE_REPO_NAME: "aivle-mini6-backend"
+    IMAGE_TAG: "latest"
+
 phases:
-  install:
-    runtime-versions:
-      java: corretto17
   pre_build:
     commands:
-      - echo "Move to backend directory"
-      - cd backend
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - echo "Repository URI is $REPOSITORY_URI"
+
   build:
     commands:
-      - echo "Build started on `date`"
-      - chmod +x gradlew
-      - ./gradlew clean build -x test
+      - echo "Docker build started on `date`"
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG ./backend
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+
   post_build:
     commands:
-      - echo "Build completed on `date`"
+      - echo "Docker push started on `date`"
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Docker image pushed to $REPOSITORY_URI:$IMAGE_TAG"
 
 artifacts:
   files:
-    - backend/build/libs/*.jar
-    - backend/src/main/resources/application.yaml
+    - buildspec.yml
