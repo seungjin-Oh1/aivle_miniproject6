@@ -1,27 +1,26 @@
 version: 0.2
- 
+
 env:
   variables:
-    AWS_REGION: "ap-northeast-2"
-    BACKEND_REPO_NAME: "aivle-backend"
-    FRONTEND_REPO_NAME: "aivle-frontend"
- 
+    BACKEND_REPO_NAME: "backend/user02"
+    FRONTEND_REPO_NAME: "frontend/user02"
+
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-      - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend/user02
-      - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend/user02
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$BACKEND_REPO_NAME
+      - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
- 
+
   build:
     commands:
       - echo Building backend image...
       - docker build -t $BACKEND_REPO_URI:$IMAGE_TAG -t $BACKEND_REPO_URI:latest ./backend
       - echo Building frontend image...
       - docker build -t $FRONTEND_REPO_URI:$IMAGE_TAG -t $FRONTEND_REPO_URI:latest ./frontend
- 
+
   post_build:
     commands:
       - echo Pushing backend image to ECR...
@@ -32,7 +31,7 @@ phases:
       - docker push $FRONTEND_REPO_URI:latest
       - echo Writing image definitions for deploy stage...
       - printf '[{"name":"backend","imageUri":"%s"},{"name":"frontend","imageUri":"%s"}]' $BACKEND_REPO_URI:$IMAGE_TAG $FRONTEND_REPO_URI:$IMAGE_TAG > imagedefinitions.json
- 
+
 artifacts:
   files:
     - imagedefinitions.json
