@@ -5,12 +5,12 @@ metadata:
   labels:
     app: aivle-mini6-backend
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app: aivle-mini6-backend
@@ -30,6 +30,8 @@ spec:
               value: "aivle-mini6-book-covers-01-01"
             - name: AWS_REGION
               value: "us-east-1"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:h2:file:/app/data/bookdb"
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -37,7 +39,6 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 10
             failureThreshold: 6
-
           livenessProbe:
             httpGet:
               path: /actuator/health
@@ -45,3 +46,10 @@ spec:
             initialDelaySeconds: 90
             periodSeconds: 20
             failureThreshold: 6
+          volumeMounts:
+            - name: h2-data
+              mountPath: /app/data
+      volumes:
+        - name: h2-data
+          persistentVolumeClaim:
+            claimName: h2-ebs-pvc

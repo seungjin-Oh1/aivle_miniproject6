@@ -33,13 +33,15 @@ phases:
       - echo "Docker image pushed to $IMAGE_URI"
       - echo "Preparing Kubernetes manifests..."
       - mkdir -p k8s-output
+      - cp k8s/backend-storageclass.yaml k8s-output/backend-storageclass.yaml
+      - cp k8s/backend-pvc.yaml k8s-output/backend-pvc.yaml
       - sed "s|416225317325.dkr.ecr.us-east-1.amazonaws.com/aivle-mini6-backend:latest|$IMAGE_URI|g" k8s/backend-deployment.yaml > k8s-output/backend-deployment.yaml
       - cp k8s/backend-service.yaml k8s-output/backend-service.yaml
-      - echo "Generated backend-deployment.yaml"
-      - cat k8s-output/backend-deployment.yaml
 
 artifacts:
   base-directory: k8s-output
   files:
+    - backend-storageclass.yaml
+    - backend-pvc.yaml
     - backend-deployment.yaml
     - backend-service.yaml
