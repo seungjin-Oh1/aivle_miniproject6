@@ -17,18 +17,11 @@ phases:
 
   pre_build:
     commands:
-      - "echo === DEBUG: caller identity ==="
-      - aws sts get-caller-identity
       - echo Configuring kubeconfig for $CLUSTER_NAME...
       - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
-      - "echo === DEBUG: kubeconfig content ==="
-      - cat /root/.kube/config || cat ~/.kube/config || echo "kubeconfig not found at expected paths"
-      - "echo === DEBUG: kubectl auth check ==="
-      - kubectl auth can-i get pods -n default || echo "auth check failed"
-      - kubectl get nodes || echo "get nodes failed"
       - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$BACKEND_REPO_NAME
       - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
-      - 'IMAGE_TAG=$(cat imagedefinitions.json | jq -r ".[0].imageUri" | cut -d: -f2)'
+      - "IMAGE_TAG=$(cat $CODEBUILD_SRC_DIR_BuildArtifact/imagedefinitions.json | jq -r \".[0].imageUri\" | cut -d: -f2)"
       - "echo Deploying image tag: $IMAGE_TAG"
 
   build:
