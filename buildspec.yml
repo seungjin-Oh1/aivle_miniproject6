@@ -14,13 +14,16 @@ phases:
       - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
       - IMAGE_TAG=$(echo $CODEBUILD_BUILD_ID | sed 's/.*://' | cut -c 1-7)
       - echo "Resolved image tag is $IMAGE_TAG"
+      - echo Pulling previous images for cache...
+      - docker pull $BACKEND_REPO_URI:latest || true
+      - docker pull $FRONTEND_REPO_URI:latest || true
 
   build:
     commands:
       - echo Building backend image...
-      - docker build -t $BACKEND_REPO_URI:$IMAGE_TAG -t $BACKEND_REPO_URI:latest ./backend
+      - docker build --cache-from $BACKEND_REPO_URI:latest -t $BACKEND_REPO_URI:$IMAGE_TAG -t $BACKEND_REPO_URI:latest ./backend
       - echo Building frontend image...
-      - docker build -t $FRONTEND_REPO_URI:$IMAGE_TAG -t $FRONTEND_REPO_URI:latest ./frontend
+      - docker build --cache-from $FRONTEND_REPO_URI:latest -t $FRONTEND_REPO_URI:$IMAGE_TAG -t $FRONTEND_REPO_URI:latest ./frontend
 
   post_build:
     commands:
