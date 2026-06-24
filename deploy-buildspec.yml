@@ -22,7 +22,7 @@ phases:
       - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$BACKEND_REPO_NAME
       - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
       # Build Stage의 imagedefinitions.json에서 실제 이미지 태그(커밋 7자리)를 읽어옴
-      - IMAGE_TAG=$(cat imagedefinitions.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['imageUri'].split(':')[-1])")
+      - IMAGE_TAG=$(cat imagedefinitions.json | jq -r '.[0].imageUri' | cut -d: -f2)
       - echo "Deploying image tag: $IMAGE_TAG"
 
   build:
