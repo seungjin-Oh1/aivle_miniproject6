@@ -30,15 +30,15 @@ spec:
               value: "aivle-mini6-book-covers-01-01"
             - name: AWS_REGION
               value: "us-east-1"
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: 8080
-          #   initialDelaySeconds: 20
-          #   periodSeconds: 10
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: 8080
-          #   initialDelaySeconds: 40
-          #   periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
