@@ -1,44 +1,16 @@
-apiVersion: apps/v1
-kind: Deployment
+ontend service · YML
+apiVersion: v1
+kind: Service
 metadata:
-  name: frontend
+  name: frontend-service
   namespace: default
   labels:
     app: frontend
 spec:
-  replicas: 1   # 미니프로젝트 규모라 1개로 시작. Stateless라서 나중에 늘려도 안전함 (EBS 제약 없음)
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  type: ClusterIP   # 지금은 내부 주소. 나중에 Ingress(ALB)가 이 Service를 통해 외부 트래픽을 전달
   selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: 416225317325.dkr.ecr.us-east-1.amazonaws.com/frontend/user02:latest
-          ports:
-            - containerPort: 80   # Dockerfile에서 nginx가 80번으로 서빙
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
-          readinessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 20
-            periodSeconds: 15
+    app: frontend     # frontend-deployment.yml의 template.metadata.labels와 일치해야 연결됨
+  ports:
+    - port: 80
+      targetPort: 80   # nginx가 듣고 있는 포트
+      protocol: TCP
