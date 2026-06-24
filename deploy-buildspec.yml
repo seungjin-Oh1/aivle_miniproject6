@@ -1,5 +1,40 @@
 version: 0.2
+
+env:
+  variables:
+    BACKEND_REPO_NAME: "backend/user02"
+    FRONTEND_REPO_NAME: "frontend/user02"
+    CLUSTER_NAME: "user02-cluster"
+
 phases:
+  install:
+    commands:
+      - echo Installing kubectl...
+      - curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - kubectl version --client
+
+  pre_build:
+    commands:
+      - echo Configuring kubeconfig for $CLUSTER_NAME...
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
+      - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$BACKEND_REPO_NAME
+      - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
+      - 'IMAGE_TAG=$(cat imagedefinitions.json | jq -r ".[0].imageUri" | cut -d: -f2)'
+      - "echo Deploying image tag: $IMAGE_TAG"
+
   build:
     commands:
-      - echo "hello world"
+      - echo Updating backend deployment image...
+      - kubectl set image deployment/backend backend=$BACKEND_REPO_URI:$IMAGE_TAG -n default
+      - echo Updating frontend deployment image...
+      - kubectl set image deployment/frontend frontend=$FRONTEND_REPO_URI:$IMAGE_TAG -n default
+      - echo Waiting for backend rollout...
+      - kubectl rollout status deployment/backend -n default --timeout=180s
+      - echo Waiting for frontend rollout...
+      - kubectl rollout status deployment/frontend -n default --timeout=180s
+
+  post_build:
+    commands:
+      - echo Deployment to EKS completed successfully.
