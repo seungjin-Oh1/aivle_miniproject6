@@ -5,7 +5,6 @@ env:
     AWS_DEFAULT_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "416225317325"
     IMAGE_REPO_NAME: "aivle-mini6-backend"
-    IMAGE_TAG: "latest"
 
 phases:
   pre_build:
@@ -13,20 +12,34 @@ phases:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_URI=$REPOSITORY_URI:$IMAGE_TAG
       - echo "Repository URI is $REPOSITORY_URI"
+      - echo "Image URI is $IMAGE_URI"
 
   build:
     commands:
       - echo "Docker build started on `date`"
       - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG ./backend
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $IMAGE_URI
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:latest
 
   post_build:
     commands:
       - echo "Docker push started on `date`"
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Docker image pushed to $REPOSITORY_URI:$IMAGE_TAG"
+      - docker push $IMAGE_URI
+      - docker push $REPOSITORY_URI:latest
+      - echo "Docker image pushed to $IMAGE_URI"
+      - echo "Preparing Kubernetes manifests..."
+      - mkdir -p k8s-output
+      - sed "s|416225317325.dkr.ecr.us-east-1.amazonaws.com/aivle-mini6-backend:latest|$IMAGE_URI|g" k8s/backend-deployment.yaml > k8s-output/backend-deployment.yaml
+      - cp k8s/backend-service.yaml k8s-output/backend-service.yaml
+      - echo "Generated backend-deployment.yaml"
+      - cat k8s-output/backend-deployment.yaml
 
 artifacts:
+  base-directory: k8s-output
   files:
-    - buildspec.yml
+    - backend-deployment.yaml
+    - backend-service.yaml
