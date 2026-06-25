@@ -13,6 +13,6 @@ public class S3Config {
     public S3Client s3Client(@Value("${aws.s3.region}") String region) {
         return S3Client.builder()
                 .region(Region.of(region))
-                .build()
+                .build();
     }
 }
