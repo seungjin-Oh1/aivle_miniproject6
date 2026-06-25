@@ -1,0 +1,31 @@
+version: 0.2
+
+cache:
+  paths:
+    - '/root/.gradle/caches/**/*'
+    - '/root/.gradle/wrapper/**/*'
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies for unit test...
+
+  build:
+    commands:
+      - echo Running backend unit tests...
+      - cd backend
+      - chmod +x ./gradlew
+      - ./gradlew test --no-daemon
+      - cd ..
+
+reports:
+  unit-tests:
+    files:
+      - '**/*.xml'
+    base-directory: 'backend/build/test-results/test'
+    file-format: 'JUNITXML'
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: '.'

@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: book-app-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing      # 외부 인터넷에서 접근 가능
+    alb.ingress.kubernetes.io/target-type: ip              # Pod IP로 직접 라우팅 (VPC CNI 사용 중이라 가능)
+    alb.ingress.kubernetes.io/healthcheck-path: /           # ALB가 frontend 헬스체크에 사용할 경로
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          # Backend API 경로들 - 코드의 @RequestMapping 그대로 매칭
+          - path: /books
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8080
+          - path: /reviews
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8080
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8080
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8080
+          # 나머지 전부(/) -> Frontend (React 정적 파일)
+          # 반드시 마지막에 위치해야 함: ALB는 더 구체적인 경로를 먼저 매칭하므로 순서가 중요
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

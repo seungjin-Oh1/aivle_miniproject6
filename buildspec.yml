@@ -1,0 +1,41 @@
+version: 0.2
+
+env:
+  variables:
+    BACKEND_REPO_NAME: "backend/user02"
+    FRONTEND_REPO_NAME: "frontend/user02"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - BACKEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$BACKEND_REPO_NAME
+      - FRONTEND_REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$FRONTEND_REPO_NAME
+      - IMAGE_TAG=$(echo $CODEBUILD_BUILD_ID | sed 's/.*://' | cut -c 1-7)
+      - echo "Resolved image tag is $IMAGE_TAG"
+      - echo Pulling previous images for cache...
+      - docker pull $BACKEND_REPO_URI:latest || true
+      - docker pull $FRONTEND_REPO_URI:latest || true
+
+  build:
+    commands:
+      - echo Building backend image...
+      - docker build --cache-from $BACKEND_REPO_URI:latest -t $BACKEND_REPO_URI:$IMAGE_TAG -t $BACKEND_REPO_URI:latest ./backend
+      - echo Building frontend image...
+      - docker build --cache-from $FRONTEND_REPO_URI:latest -t $FRONTEND_REPO_URI:$IMAGE_TAG -t $FRONTEND_REPO_URI:latest ./frontend
+
+  post_build:
+    commands:
+      - echo Pushing backend image to ECR...
+      - docker push $BACKEND_REPO_URI:$IMAGE_TAG
+      - docker push $BACKEND_REPO_URI:latest
+      - echo Pushing frontend image to ECR...
+      - docker push $FRONTEND_REPO_URI:$IMAGE_TAG
+      - docker push $FRONTEND_REPO_URI:latest
+      - echo Writing image definitions for deploy stage...
+      - printf '[{"name":"backend","imageUri":"%s"},{"name":"frontend","imageUri":"%s"}]' $BACKEND_REPO_URI:$IMAGE_TAG $FRONTEND_REPO_URI:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json

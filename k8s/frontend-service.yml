@@ -1,0 +1,16 @@
+ontend service · YML
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP   # 지금은 내부 주소. 나중에 Ingress(ALB)가 이 Service를 통해 외부 트래픽을 전달
+  selector:
+    app: frontend     # frontend-deployment.yml의 template.metadata.labels와 일치해야 연결됨
+  ports:
+    - port: 80
+      targetPort: 80   # nginx가 듣고 있는 포트
+      protocol: TCP

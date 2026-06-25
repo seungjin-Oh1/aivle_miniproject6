@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: default
+  labels:
+    app: backend
+spec:
+  type: ClusterIP   # 클러스터 내부에서만 접근 가능한 고정 주소. 외부 노출은 Ingress가 따로 처리
+  selector:
+    app: backend     # backend-deployment.yml의 template.metadata.labels와 일치해야 연결됨
+  ports:
+    - port: 8080         # Service 자체의 포트 (다른 Pod가 backend-service:8080 으로 접근)
+      targetPort: 8080   # 실제 컨테이너가 듣고 있는 포트
+      protocol: TCP
